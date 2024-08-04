@@ -1,0 +1,171 @@
+<html><head><base href="https://cosmic-voyage-simulator.com"><title>3D太空探索模擬器</title>
+<style>
+  body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #000;
+    font-family: Arial, sans-serif;
+  }
+  #instructions {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #fff;
+    background-color: rgba(0, 0, 0, 0.5);
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 100;
+  }
+</style>
+</head>
+<body>
+<div id="instructions">
+  操作說明：<br>
+  ↑: 向上移動<br>
+  ↓: 向下移動<br>
+  ←: 向左移動<br>
+  →: 向右移動<br>
+  空格鍵: 加速<br>
+  Shift鍵: 減速
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+const renderer = new THREE.WebGLRenderer();
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+// Create stars
+const starGeometry = new THREE.BufferGeometry();
+const starMaterial = new THREE.PointsMaterial({
+  color: 0xFFFFFF,
+  sizeAttenuation: true,
+  transparent: true,
+  alphaTest: 0.5
+});
+
+const starCount = 1500; // Reduced number of stars
+const starPositions = new Float32Array(starCount * 3);
+const starSizes = new Float32Array(starCount);
+
+for (let i = 0; i < starCount; i++) {
+  const i3 = i * 3;
+  starPositions[i3] = THREE.MathUtils.randFloatSpread(2000);
+  starPositions[i3 + 1] = THREE.MathUtils.randFloatSpread(2000);
+  starPositions[i3 + 2] = THREE.MathUtils.randFloatSpread(2000);
+  
+  // Vary star sizes
+  starSizes[i] = Math.random() * 4 + 0.5; // Size between 0.5 and 4.5
+}
+
+starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+starGeometry.setAttribute('size', new THREE.BufferAttribute(starSizes, 1));
+
+const stars = new THREE.Points(starGeometry, starMaterial);
+scene.add(stars);
+
+// Create larger "planet" particles
+const planetGeometry = new THREE.BufferGeometry();
+const planetMaterial = new THREE.PointsMaterial({
+  color: 0xFFFFFF,
+  sizeAttenuation: true,
+  transparent: true,
+  alphaTest: 0.5
+});
+
+const planetCount = 50;
+const planetPositions = new Float32Array(planetCount * 3);
+const planetSizes = new Float32Array(planetCount);
+
+for (let i = 0; i < planetCount; i++) {
+  const i3 = i * 3;
+  planetPositions[i3] = THREE.MathUtils.randFloatSpread(2000);
+  planetPositions[i3 + 1] = THREE.MathUtils.randFloatSpread(2000);
+  planetPositions[i3 + 2] = THREE.MathUtils.randFloatSpread(2000);
+  
+  planetSizes[i] = Math.random() * 10 + 5; // Size between 5 and 15
+}
+
+planetGeometry.setAttribute('position', new THREE.BufferAttribute(planetPositions, 3));
+planetGeometry.setAttribute('size', new THREE.BufferAttribute(planetSizes, 1));
+
+const planets = new THREE.Points(planetGeometry, planetMaterial);
+scene.add(planets);
+
+camera.position.z = 5;
+
+let moveSpeed = 0.5;
+let velocity = new THREE.Vector3();
+
+const onKeyDown = function(event) {
+  switch (event.code) {
+    case 'ArrowUp': velocity.y = moveSpeed; break;
+    case 'ArrowDown': velocity.y = -moveSpeed; break;
+    case 'ArrowLeft': velocity.x = -moveSpeed; break;
+    case 'ArrowRight': velocity.x = moveSpeed; break;
+    case 'Space': moveSpeed = Math.min(moveSpeed * 1.1, 2); break;
+    case 'ShiftLeft': moveSpeed = Math.max(moveSpeed * 0.9, 0.1); break;
+  }
+};
+
+const onKeyUp = function(event) {
+  switch (event.code) {
+    case 'ArrowUp':
+    case 'ArrowDown': velocity.y = 0; break;
+    case 'ArrowLeft':
+    case 'ArrowRight': velocity.x = 0; break;
+  }
+};
+
+document.addEventListener('keydown', onKeyDown);
+document.addEventListener('keyup', onKeyUp);
+
+function animate() {
+  requestAnimationFrame(animate);
+
+  // Move camera
+  camera.position.add(velocity);
+
+  // Move stars
+  const starPositions = stars.geometry.attributes.position.array;
+  for (let i = 0; i < starPositions.length; i += 3) {
+    starPositions[i + 2] += moveSpeed;
+    
+    if (starPositions[i + 2] > camera.position.z) {
+      starPositions[i + 2] -= 2000;
+      starPositions[i] = THREE.MathUtils.randFloatSpread(2000);
+      starPositions[i + 1] = THREE.MathUtils.randFloatSpread(2000);
+    }
+  }
+  stars.geometry.attributes.position.needsUpdate = true;
+
+  // Move planets
+  const planetPositions = planets.geometry.attributes.position.array;
+  for (let i = 0; i < planetPositions.length; i += 3) {
+    planetPositions[i + 2] += moveSpeed * 0.5; // Planets move slower
+    
+    if (planetPositions[i + 2] > camera.position.z) {
+      planetPositions[i + 2] -= 2000;
+      planetPositions[i] = THREE.MathUtils.randFloatSpread(2000);
+      planetPositions[i + 1] = THREE.MathUtils.randFloatSpread(2000);
+    }
+  }
+  planets.geometry.attributes.position.needsUpdate = true;
+
+  renderer.render(scene, camera);
+}
+
+animate();
+
+window.addEventListener('resize', () => {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+</script>
+</body></html>
