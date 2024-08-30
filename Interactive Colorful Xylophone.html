@@ -1,0 +1,111 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Colorful Xylophone</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .key {
+            transition: all 0.07s ease;
+        }
+        .playing {
+            transform: scale(1.1);
+            border-color: #ffc600;
+            box-shadow: 0 0 10px #ffc600;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 h-screen flex flex-col items-center justify-center">
+    <h1 class="text-4xl font-bold mb-4">Colorful Xylophone</h1>
+    <p class="mb-4">Click on the keys or use your keyboard (A-H) to play!</p>
+    <div id="xylophone" class="flex space-x-2">
+        <div data-key="65" class="key bg-red-500 w-16 h-64 rounded-b-lg cursor-pointer"></div>
+        <div data-key="83" class="key bg-orange-500 w-16 h-60 rounded-b-lg cursor-pointer"></div>
+        <div data-key="68" class="key bg-yellow-500 w-16 h-56 rounded-b-lg cursor-pointer"></div>
+        <div data-key="70" class="key bg-green-500 w-16 h-52 rounded-b-lg cursor-pointer"></div>
+        <div data-key="71" class="key bg-blue-500 w-16 h-48 rounded-b-lg cursor-pointer"></div>
+        <div data-key="72" class="key bg-indigo-500 w-16 h-44 rounded-b-lg cursor-pointer"></div>
+        <div data-key="74" class="key bg-purple-500 w-16 h-40 rounded-b-lg cursor-pointer"></div>
+        <div data-key="75" class="key bg-pink-500 w-16 h-36 rounded-b-lg cursor-pointer"></div>
+    </div>
+
+    <script>
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(frequency) {
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(1, audioContext.currentTime + 0.01);
+            gainNode.gain.linearRampToValueAtTime(0, audioContext.currentTime + 0.5);
+
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+
+        function removeTransition(e) {
+            if (e.propertyName !== 'transform') return;
+            this.classList.remove('playing');
+        }
+
+        const keys = document.querySelectorAll('.key');
+        keys.forEach(key => key.addEventListener('transitionend', removeTransition));
+
+        function playNote(e) {
+            const key = e.target;
+            const noteFrequencies = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+            const index = Array.from(keys).indexOf(key);
+            
+            if (index !== -1) {
+                playSound(noteFrequencies[index]);
+                key.classList.add('playing');
+            }
+        }
+
+        keys.forEach(key => key.addEventListener('click', playNote));
+
+        window.addEventListener('keydown', e => {
+            const key = document.querySelector(`.key[data-key="${e.keyCode}"]`);
+            if (!key) return;
+            
+            const index = Array.from(keys).indexOf(key);
+            const noteFrequencies = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+            
+            playSound(noteFrequencies[index]);
+            key.classList.add('playing');
+        });
+    </script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>
