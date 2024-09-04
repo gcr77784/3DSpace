@@ -66,6 +66,13 @@
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
+        #recommendation {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #e7f3fe;
+            border-left: 5px solid #2196F3;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -103,7 +110,7 @@
             <tbody></tbody>
         </table>
         <p><strong>現在時間為：</strong> <span id="currentTime"></span></p>
-        <p><strong>如果你現在就上床睡覺，你最佳的起床時間是：</strong> <span id="bestWakeUpTime"></span></p>
+        <div id="recommendation"></div>
     </div>
 
     <script>
@@ -139,7 +146,7 @@
                 const sleepTime = new Date(wakeUp.getTime() - (90 * i + fallAsleepTime) * 60000);
                 sleepTimes.unshift({
                     cycle: i,
-                    time: `${sleepTime.getHours().toString().padStart(2, '0')}點 ${sleepTime.getMinutes().toString().padStart(2, '0')}分`
+                    time: sleepTime
                 });
             }
 
@@ -150,10 +157,30 @@
                 const cellCycle = row.insertCell(0);
                 const cellTime = row.insertCell(1);
                 cellCycle.innerHTML = `<span class="cycle-number">第 ${cycle} 個週期</span>`;
-                cellTime.textContent = time;
+                cellTime.textContent = `${time.getHours().toString().padStart(2, '0')}點 ${time.getMinutes().toString().padStart(2, '0')}分`;
             });
 
-            document.getElementById('bestWakeUpTime').textContent = `${wakeUpHour.toString().padStart(2, '0')}點 ${wakeUpMinute.toString().padStart(2, '0')}分`;
+            // 生成推薦
+            const now = new Date();
+            let recommendedCycle = null;
+            for (let i = sleepTimes.length - 1; i >= 0; i--) {
+                if (sleepTimes[i].time > now) {
+                    recommendedCycle = sleepTimes[i];
+                } else {
+                    break;
+                }
+            }
+
+            const recommendationElement = document.getElementById('recommendation');
+            if (recommendedCycle) {
+                const minutesUntilSleep = Math.round((recommendedCycle.time - now) / 60000);
+                recommendationElement.innerHTML = `建議您在 <strong>${recommendedCycle.time.getHours().toString().padStart(2, '0')}點 ${recommendedCycle.time.getMinutes().toString().padStart(2, '0')}分</strong> 入睡（第 ${recommendedCycle.cycle} 個睡眠週期）。<br>距離理想入睡時間還有 ${minutesUntilSleep} 分鐘。`;
+            } else {
+                const nextCycle = sleepTimes[0];
+                const minutesUntilNextCycle = Math.round((nextCycle.time.getTime() + 24 * 60 * 60 * 1000 - now.getTime()) / 60000);
+                recommendationElement.innerHTML = `您已經錯過了今天的最佳入睡時間。建議您立即就寢，或等待下一個睡眠週期 <strong>${nextCycle.time.getHours().toString().padStart(2, '0')}點 ${nextCycle.time.getMinutes().toString().padStart(2, '0')}分</strong>（第 ${nextCycle.cycle} 個睡眠週期）。<br>距離下一個理想入睡時間還有 ${minutesUntilNextCycle} 分鐘。`;
+            }
+
             document.getElementById('results').style.display = 'block';
         }
     </script>
