@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>最佳睡眠時間|REM週期計算機</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        input, select {
+            margin: 5px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        .cycle-number {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        #results {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+    <h1>最佳睡眠時間|REM週期計算機</h1>
+    
+    <div class="input-group">
+        <label>
+            請輸入你進入睡眠平均需要花費時間：
+            <input type="number" id="fallAsleepTime" value="20" min="0" max="180"> 分鐘
+        </label>
+    </div>
+    
+    <div class="input-group">
+        <label>請選擇你想起床的時間：</label>
+        <select id="wakeUpHour"></select>
+        <select id="wakeUpMinute">
+            <option value="0">00分</option>
+            <option value="15">15分</option>
+            <option value="30">30分</option>
+            <option value="45">45分</option>
+        </select>
+    </div>
+    
+    <button onclick="calculateSleepTimes()">點此計算</button>
+    
+    <div id="results" style="display:none;">
+        <p><strong>依指定的時間，最佳睡眠入睡時間依序為：</strong></p>
+        <table id="sleepTimesTable">
+            <thead>
+                <tr>
+                    <th>睡眠週期</th>
+                    <th>建議入睡時間</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <p><strong>現在時間為：</strong> <span id="currentTime"></span></p>
+        <p><strong>如果你現在就上床睡覺，你最佳的起床時間是：</strong> <span id="bestWakeUpTime"></span></p>
+    </div>
+
+    <script>
+        // 填充小時選擇
+        const wakeUpHourSelect = document.getElementById('wakeUpHour');
+        for (let i = 0; i < 24; i++) {
+            const option = document.createElement('option');
+            option.value = i;
+            option.textContent = i + '點';
+            wakeUpHourSelect.appendChild(option);
+        }
+        wakeUpHourSelect.value = 7; // 默認7點
+
+        // 更新當前時間
+        function updateCurrentTime() {
+            const now = new Date();
+            document.getElementById('currentTime').textContent = 
+                `${now.getHours().toString().padStart(2, '0')}點 ${now.getMinutes().toString().padStart(2, '0')}分 ${now.getSeconds().toString().padStart(2, '0')}秒`;
+        }
+        setInterval(updateCurrentTime, 1000);
+        updateCurrentTime();
+
+        function calculateSleepTimes() {
+            const fallAsleepTime = parseInt(document.getElementById('fallAsleepTime').value);
+            const wakeUpHour = parseInt(document.getElementById('wakeUpHour').value);
+            const wakeUpMinute = parseInt(document.getElementById('wakeUpMinute').value);
+
+            const wakeUp = new Date();
+            wakeUp.setHours(wakeUpHour, wakeUpMinute, 0);
+            
+            const sleepTimes = [];
+            for (let i = 1; i <= 6; i++) {
+                const sleepTime = new Date(wakeUp.getTime() - (90 * i + fallAsleepTime) * 60000);
+                sleepTimes.unshift({
+                    cycle: i,
+                    time: `${sleepTime.getHours().toString().padStart(2, '0')}點 ${sleepTime.getMinutes().toString().padStart(2, '0')}分`
+                });
+            }
+
+            const tableBody = document.getElementById('sleepTimesTable').getElementsByTagName('tbody')[0];
+            tableBody.innerHTML = '';
+            sleepTimes.forEach(({cycle, time}) => {
+                const row = tableBody.insertRow();
+                const cellCycle = row.insertCell(0);
+                const cellTime = row.insertCell(1);
+                cellCycle.innerHTML = `<span class="cycle-number">第 ${cycle} 個週期</span>`;
+                cellTime.textContent = time;
+            });
+
+            document.getElementById('bestWakeUpTime').textContent = `${wakeUpHour.toString().padStart(2, '0')}點 ${wakeUpMinute.toString().padStart(2, '0')}分`;
+            document.getElementById('results').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
