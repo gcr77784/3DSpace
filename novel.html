@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>互動式動態小說閱讀頁面</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: "Noto Serif TC", serif;
+            font-weight: 300;
+            line-height: 2;
+            letter-spacing: 0.05em;
+        }
+
+        @keyframes glitch-effect {
+            0% {
+                transform: translate(0) scale(1);
+                opacity: 0.7;
+                color: #ff0000;
+            }
+            20% {
+                transform: translate(-2px, 2px) scale(1);
+                opacity: 0.9;
+                color: #cc0000;
+            }
+            40% {
+                transform: translate(-2px, -2px) scale(1);
+                opacity: 1;
+                color: #ff0000;
+            }
+            60% {
+                transform: translate(2px, 2px) scale(1);
+                opacity: 0.9;
+                color: #990000;
+            }
+            80% {
+                transform: translate(2px, -2px) scale(1);
+                opacity: 0.8;
+                color: #cc0000;
+            }
+            100% {
+                transform: translate(0) scale(1);
+                opacity: 0.7;
+                color: #ff0000;
+            }
+        }
+
+        .glitch {
+            position: relative;
+            display: inline-block;
+            font-size: inherit;
+            line-height: inherit;
+        }
+
+        .glitch.active {
+            animation: text-distortion 2s infinite;
+            transform-origin: center;
+        }
+
+        .glitch.active::before,
+        .glitch.active::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+            clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+            font-size: inherit;
+            line-height: inherit;
+        }
+
+        .glitch.active::before {
+            animation: glitch-effect 3s infinite;
+            color: #ff0000;
+            z-index: -2;
+            left: -2px;
+            text-shadow: 2px 0 #ff0000;
+            transform-origin: center;
+        }
+
+        .glitch.active::after {
+            animation: glitch-effect 2s infinite;
+            color: #cc0000;
+            z-index: -1;
+            left: 2px;
+            text-shadow: -2px 0 #cc0000;
+            transform-origin: center;
+        }
+
+        @keyframes horror-effect {
+            0% {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
+            25% {
+                opacity: 0.7;
+                transform: scale(1.02) skewX(2deg);
+                filter: blur(1px);
+            }
+            50% {
+                opacity: 0.9;
+                transform: scale(0.98) skewX(-1deg);
+                filter: blur(0);
+            }
+            75% {
+                opacity: 0.8;
+                transform: scale(1.01) skewX(1deg);
+                filter: blur(2px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+                filter: blur(0);
+            }
+        }
+
+        .horror-text {
+            display: inline-block;
+            transition: all 0.3s ease;
+        }
+
+        .horror-text.active {
+            animation: horror-effect 4s infinite;
+            text-shadow: 0 0 8px rgba(255, 0, 0, 0.3);
+            color: #ff0000;
+        }
+
+        .blur {
+            filter: blur(5px);
+            transition: filter 2s ease-out;
+        }
+
+        .blur.active {
+            filter: blur(0);
+        }
+
+        .effect-text {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            padding: 0.5rem 0;
+            margin-bottom: 1.5rem;
+            display: block;
+        }
+
+        .effect-text:hover {
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+        }
+
+        .audio-player {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            position: fixed;
+            bottom: 1rem;
+            right: 1rem;
+            z-index: 50;
+            transition: all 0.3s ease;
+        }
+
+        .audio-player:hover {
+            background: rgba(0, 0, 0, 0.9);
+        }
+
+        audio {
+            height: 2rem;
+            filter: invert(1) hue-rotate(180deg);
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        audio:hover {
+            opacity: 1;
+        }
+
+        @media (max-width: 768px) {
+            .content-container {
+                padding: 1rem;
+            }
+            
+            .story-image {
+                margin: 1rem 0;
+            }
+            
+            .audio-player {
+                bottom: 0;
+                right: 0;
+                left: 0;
+                border-radius: 0;
+            }
+            
+            audio {
+                width: 100%;
+            }
+        }
+
+        h2 {
+            font-weight: 300;
+        }
+    </style>
+</head>
+<body class="bg-black text-gray-300 min-h-screen">
+    <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- 範例圖片 -->
+        <div class="mt-16 mb-16 flex justify-center">
+            <img src="https://images.plurk.com/BpS17UYW5e5ISRBkZNPr.png" 
+                 alt="故事配圖" 
+                 class="rounded-lg shadow-2xl max-w-full h-auto story-image"
+                 style="max-width: 700px;">
+        </div>
+
+        <!-- 內容區域 -->
+        <div class="space-y-16 content-container pb-32">
+            <!-- 第一章 -->
+            <section class="prose prose-invert max-w-none">
+                <h2 class="text-2xl font-medium text-gray-100 mb-6 pb-2 border-b border-gray-800">第一章 • 序幕</h2>
+                <p class="leading-loose text-justify mb-6">
+                    遠古的霧氣籠罩著這片大地，天地間一片混沌。在這個世界初開的時代，萬物才剛開始有了雛形。晨曦的微光穿透濃霧，為大地帶來第一絲溫暖，彷彿是天地間的第一次呼吸。
+                </p>
+                <p class="leading-loose text-justify">
+                    遠方的山脈若隱若現，它們靜靜佇立，見證著這片土地上即將展開的故事。清晨的露珠在草葉上凝結，反射著微弱的光芒，像是大地灑落的眼淚。
+                </p>
+            </section>
+
+            <!-- 第二章 -->
+            <section class="prose prose-invert max-w-none">
+                <h2 class="text-2xl font-medium text-gray-100 mb-6 pb-2 border-b border-gray-800">第二章 • 異象</h2>
+                <p class="effect-text glitch leading-loose text-justify" data-effect="glitch" data-text="不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不不">
+                    突然間，天空中出現異常的景象。雲層開始急速流動，形成詭異的漩渦。天地之間的靈氣變得躁動不安，空氣中彷彿充滿了無形的壓力。遠方傳來低沉的轟鳴，像是上古巨獸的喘息。
+                </p>
+            </section>
+
+            <!-- 第三章 -->
+            <section class="prose prose-invert max-w-none">
+                <h2 class="text-2xl font-medium text-gray-100 mb-6 pb-2 border-b border-gray-800">第三章 • 震動</h2>
+                <p class="effect-text horror-text leading-loose text-justify" data-effect="horror">
+                    大地開始顫抖，一股來自地心深處的力量正在覺醒。山脈震顫，古老的巨木搖擺，彷彿整個世界都在為即將發生的事情而戰慄。這不是普通的地震，而是某種更為古老、更具威能的力量正在蘇醒。
+                </p>
+            </section>
+
+            <!-- 第四章 -->
+            <section class="prose prose-invert max-w-none">
+                <h2 class="text-2xl font-medium text-gray-100 mb-6 pb-2 border-b border-gray-800">第四章 • 顯現</h2>
+                <p class="effect-text blur leading-loose text-justify" data-effect="blur">
+                    濃霧中，一個模糊的身影緩緩顯現。它的形態難以描述，既像是人形，又帶著某種遠古生物的特徵。隨著它的現身，周圍的空間似乎都扭曲了，現實與虛幻的界限變得模糊。這個存在，似乎來自比混沌更古老的時代。
+                </p>
+            </section>
+        </div>
+    </div>
+
+    <!-- 音樂播放器 -->
+    <div class="audio-player">
+        <audio id="bgMusic" controls>
+            <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+            您的瀏覽器不支援音訊播放器。
+        </audio>
+    </div>
+
+    <script>
+        document.querySelectorAll('.effect-text').forEach(element => {
+            element.addEventListener('click', function() {
+                if (this.classList.contains('blur')) {
+                    this.classList.toggle('active');
+                } else {
+                    if (this.classList.contains('active')) {
+                        this.classList.remove('active');
+                    } else {
+                        this.classList.add('active');
+                    }
+                }
+            });
+        });
+    </script>
+<script>window.parent.postMessage({ action: "ready" }, "*"); 
+ 
+window.console = new Proxy(console, {
+  get(target, prop) {
+    if (['log', 'warn', 'error'].includes(prop)) {
+      return new Proxy(target[prop], {
+        apply(fn, thisArg, args) {
+          fn.apply(thisArg, args);
+          window.parent.postMessage({ action: 'console', 
+            type: prop, 
+            args: args.map((arg) => {
+              try {
+                return JSON.stringify(arg).replace(/^["']|["']$/g, '');
+              } catch (e) {
+                return arg;
+              }
+            }) 
+          }, '*');
+        }
+      });
+    }
+    return target[prop];
+  }
+});
+</script></body>
+</html>
